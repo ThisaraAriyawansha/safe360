@@ -12,14 +12,16 @@ export const metadata = {
   title: "Safe360 — Home Security Monitor",
   description: "Real-time PIR motion sensor monitoring for your home",
   manifest: "/manifest.json",
-  themeColor: "#0a1628",
+};
+
+export const viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={poppins.variable}>
       <head>
-        {/* Google Fonts — Milonga & Prata */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

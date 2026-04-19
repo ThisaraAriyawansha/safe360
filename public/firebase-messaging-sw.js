@@ -4,15 +4,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-// ⚠️ Replace with your Firebase config
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCk2NYOIRHutr_nYaDx61TytSQ7VQbsGgc",
+  authDomain: "safe360-968fe.firebaseapp.com",
+  databaseURL: "https://safe360-968fe-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "safe360-968fe",
+  storageBucket: "safe360-968fe.firebasestorage.app",
+  messagingSenderId: "1045081557036",
+  appId: "1:1045081557036:web:04f4b748e32d99b295e989"
 });
 
 const messaging = firebase.messaging();

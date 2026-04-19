@@ -1,6 +1,6 @@
 // app/page.js
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { database, getFirebaseMessaging, firebaseConfig, configured } from "../lib/firebase";
 import { ref, onValue, set, push, query, orderByChild, startAt, remove, get } from "firebase/database";
 import { getToken, onMessage } from "firebase/messaging";
@@ -30,10 +30,16 @@ export default function Home() {
   });
   const [notifStatus, setNotifStatus] = useState("idle");
   const [fcmToken, setFcmToken]       = useState(null);
-  const [alerts, setAlerts]           = useState([]);          // live toast alerts
-  const [history, setHistory]         = useState([]);          // persisted DB history
+  const [alerts, setAlerts]           = useState([]);
+  const [history, setHistory]         = useState([]);
   const [connected, setConnected]     = useState(false);
   const [currentTime, setCurrentTime] = useState("");
+  const [deviceCount, setDeviceCount] = useState(0);
+  const prevSensorRef = useRef({
+    invertor_side:       { motion: false },
+    front_side:          { motion: false },
+    water_supply_side:   { motion: false },
+  });
 
   // ── Clock ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -45,6 +51,16 @@ export default function Home() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // ── Listen to registered device count ────────────────────────────────────
+  useEffect(() => {
+    if (!configured) return;
+    const tokensRef = ref(database, "safe360/tokens");
+    const unsub = onValue(tokensRef, (snap) => {
+      setDeviceCount(snap.exists() ? Object.keys(snap.val()).length : 0);
+    });
+    return () => unsub();
   }, []);
 
   // ── Purge + load alert history from Firebase ───────────────────────────────
@@ -91,19 +107,23 @@ export default function Home() {
         setConnected(true);
         if (!snapshot.exists()) return;
         const data = snapshot.val();
-        setSensorData((prev) => {
-          const next = { ...prev };
-          Object.keys(data).forEach((key) => {
-            if (next[key] === undefined) return;
-            const wasMotion = prev[key]?.motion;
-            const isMotion  = data[key]?.motion;
-            next[key] = data[key];
-            if (!wasMotion && isMotion) {
-              const sensor = SENSORS.find((s) => s.id === key);
-              saveAndToast(`Motion detected at ${sensor?.label || key}!`, "alert", key);
-            }
-          });
-          return next;
+
+        // Detect new motion events using a ref (not inside the state updater)
+        // so React StrictMode double-invoke doesn't fire alerts twice
+        const newMotionKeys = [];
+        Object.keys(data).forEach((key) => {
+          if (prevSensorRef.current[key] === undefined) return;
+          const wasMotion = prevSensorRef.current[key]?.motion;
+          const isMotion  = data[key]?.motion;
+          if (!wasMotion && isMotion) newMotionKeys.push(key);
+          prevSensorRef.current[key] = data[key];
+        });
+
+        setSensorData({ ...prevSensorRef.current });
+
+        newMotionKeys.forEach((key) => {
+          const sensor = SENSORS.find((s) => s.id === key);
+          saveAndToast(`Motion detected at ${sensor?.label || key}!`, "alert", key);
         });
       },
       (error) => {
@@ -112,6 +132,7 @@ export default function Home() {
       }
     );
     return () => unsub();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Save alert to Firebase + show toast ───────────────────────────────────
@@ -140,6 +161,17 @@ export default function Home() {
       const token = await getToken(messaging, { vapidKey: firebaseConfig.vapidKey });
       setFcmToken(token);
       setNotifStatus("granted");
+
+      // Save token to Firebase so all devices can be notified
+      const deviceLabel = `${navigator.platform || "Device"} — ${new Date().toLocaleDateString()}`;
+      const tokenKey    = token.slice(-16); // use last 16 chars as a stable key
+      await set(ref(database, `safe360/tokens/${tokenKey}`), {
+        token,
+        label:      deviceLabel,
+        userAgent:  navigator.userAgent.slice(0, 80),
+        registeredAt: Date.now(),
+      }).catch(() => {});
+
       onMessage(messaging, (payload) => {
         const { title, body } = payload.notification || {};
         saveAndToast(body || title || "Motion detected!", "alert");
@@ -248,14 +280,22 @@ export default function Home() {
 
         {/* ── PUSH NOTIFICATIONS ── */}
         <section className={styles.notifSection}>
-          <h3 className={styles.sectionTitle}>Push Notifications</h3>
+          <div className={styles.notifHeader}>
+            <h3 className={styles.sectionTitle}>Push Notifications</h3>
+            {deviceCount > 0 && (
+              <span className={styles.deviceBadge}>
+                {deviceCount} device{deviceCount !== 1 ? "s" : ""} registered
+              </span>
+            )}
+          </div>
           <div className={styles.notifCard}>
             <div className={styles.notifInfo}>
               <div className={styles.notifIconWrap}>🔔</div>
               <div>
                 <p className={styles.notifTitle}>Get alerted instantly</p>
                 <p className={styles.notifDesc}>
-                  Receive push notifications on this device when motion is detected — even when the app is closed.
+                  Open this app on every phone or laptop and tap <strong>Enable Notifications</strong>.
+                  Each device registers separately — all will receive alerts when motion is detected.
                 </p>
               </div>
             </div>
