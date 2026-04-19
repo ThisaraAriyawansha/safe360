@@ -12,6 +12,9 @@ out/
 .env.test.local
 .env.production.local
 
+# Generated files (built from templates — secrets injected at build time)
+public/firebase-messaging-sw.js
+
 # Misc
 .DS_Store
 *.pem
