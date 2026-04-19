@@ -501,6 +501,162 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── LIVE TOAST LIST ── */
+.toastList {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  border-left: 3px solid;
+  background: var(--navy-900);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: fadeInUp 0.3s ease both;
+}
+
+.toast_alert { border-color: var(--alert); background: rgba(10,22,40,0.95); }
+.toast_info  { border-color: var(--accent); background: rgba(10,22,40,0.95); }
+.toast_warn  { border-color: var(--warn);  background: rgba(10,22,40,0.95); }
+
+.toastDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.toast_alert .toastDot { background: var(--alert); }
+.toast_info  .toastDot { background: var(--accent); }
+.toast_warn  .toastDot { background: var(--warn); }
+
+.toastMsg  { font-size: 13px; color: var(--white-90); margin-bottom: 2px; }
+.toastTime { font-size: 11px; color: var(--white-60); font-variant-numeric: tabular-nums; }
+
+/* ── ALERT HISTORY ── */
+.historySection { animation: fadeInUp 0.5s ease both; }
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.historyBadge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--white-60);
+  background: var(--white-08);
+  border: 1px solid var(--white-08);
+  border-radius: 99px;
+  padding: 3px 12px;
+  letter-spacing: 0.04em;
+}
+
+.historyEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px;
+  background: var(--white-04);
+  border: 1px dashed var(--white-08);
+  border-radius: var(--radius-lg);
+  color: var(--white-60);
+  font-size: 14px;
+}
+
+.historyEmptyIcon { font-size: 28px; }
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
+  transition: border-color 0.2s;
+}
+
+.historyItem:hover { border-color: var(--white-20); }
+
+.historyItem_alert { border-left: 3px solid var(--alert); }
+.historyItem_info  { border-left: 3px solid var(--accent); }
+.historyItem_warn  { border-left: 3px solid var(--warn); }
+
+.historyItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.historyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.historyItem_alert .historyDot { background: var(--alert); }
+.historyItem_info  .historyDot { background: var(--accent); }
+.historyItem_warn  .historyDot { background: var(--warn); }
+
+.historyIcon { font-size: 18px; }
+
+.historyBody { flex: 1; min-width: 0; }
+
+.historyMsg {
+  font-size: 14px;
+  color: var(--white-90);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.historyDate { font-size: 11px; color: var(--white-60); font-weight: 500; }
+.historyTime { font-size: 11px; color: var(--white-60); font-variant-numeric: tabular-nums; }
+.historyZone { font-size: 11px; color: var(--accent); font-weight: 500; }
+.historySep  { font-size: 11px; color: var(--white-20); }
+
+.historyTypeBadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.historyBadge_alert { background: var(--alert-glow); color: var(--alert); border: 1px solid var(--alert); }
+.historyBadge_info  { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent); }
+.historyBadge_warn  { background: rgba(251,191,36,0.12); color: var(--warn); border: 1px solid var(--warn); }
+
 /* ── FOOTER ── */
 .footer {
   position: relative;
