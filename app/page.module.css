@@ -365,6 +365,30 @@
   color: var(--accent);
 }
 
+/* ── NOTIFICATION SECTION HEADER ── */
+.notifHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.notifHeader .sectionTitle { margin-bottom: 0; border-bottom: none; padding-bottom: 0; border-bottom: 0; }
+
+.deviceBadge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-lt);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 99px;
+  padding: 4px 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 /* ── NOTIFICATION CARD ── */
 .notifCard {
   background: var(--bg-card);
