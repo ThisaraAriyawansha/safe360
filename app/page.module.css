@@ -501,6 +501,42 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── SETUP BANNER ── */
+.setupBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 22px;
+  background: rgba(251,191,36,0.07);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  animation: fadeInUp 0.4s ease both;
+}
+
+.setupBannerIcon { font-size: 22px; flex-shrink: 0; }
+
+.setupBannerTitle {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  color: var(--warn);
+  margin-bottom: 4px;
+}
+
+.setupBannerDesc {
+  font-size: 13px;
+  color: var(--white-60);
+  line-height: 1.6;
+}
+
+.setupBannerDesc code {
+  font-family: 'Courier New', monospace;
+  background: var(--white-08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--white-90);
+  font-size: 12px;
+}
+
 /* ── LIVE TOAST LIST ── */
 .toastList {
   position: fixed;

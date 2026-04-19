@@ -49,6 +49,7 @@ export default function Home() {
 
   // ── Purge + load alert history from Firebase ───────────────────────────────
   useEffect(() => {
+    if (!configured) return;
     const cutoff   = Date.now() - ONE_MONTH_MS;
     const alertsRef = ref(database, "safe360/alerts");
 
@@ -82,6 +83,7 @@ export default function Home() {
 
   // ── Listen to sensor state ─────────────────────────────────────────────────
   useEffect(() => {
+    if (!configured) return;
     const sensorsRef = ref(database, "safe360/sensors");
     const unsub = onValue(
       sensorsRef,
@@ -183,6 +185,20 @@ export default function Home() {
       </header>
 
       <main className={styles.main}>
+
+        {/* ── SETUP BANNER (shown until .env.local is filled in) ── */}
+        {!configured && (
+          <div className={styles.setupBanner}>
+            <span className={styles.setupBannerIcon}>⚠️</span>
+            <div>
+              <p className={styles.setupBannerTitle}>Firebase not configured</p>
+              <p className={styles.setupBannerDesc}>
+                Copy <code>.env.local.example</code> → <code>.env.local</code>, fill in your Firebase
+                project values, then restart the dev server (<code>npm run dev</code>).
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── HERO ── */}
         <section className={styles.heroSection}>
