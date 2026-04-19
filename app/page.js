@@ -1,7 +1,7 @@
 // app/page.js
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { database, getFirebaseMessaging, firebaseConfig } from "../lib/firebase";
+import { database, getFirebaseMessaging, firebaseConfig, configured } from "../lib/firebase";
 import { ref, onValue, set, push, query, orderByChild, startAt, remove, get } from "firebase/database";
 import { getToken, onMessage } from "firebase/messaging";
 import styles from "./page.module.css";
