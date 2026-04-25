@@ -22,6 +22,16 @@ function formatDateTime(ts) {
   };
 }
 
+function timeAgo(ts) {
+  if (!ts) return "—";
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 10) return "just now";
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  return new Date(ts).toLocaleTimeString();
+}
+
 export default function Home() {
   const [sensorData, setSensorData] = useState({
     invertor_side:       { motion: false, lastSeen: null },
@@ -35,6 +45,7 @@ export default function Home() {
   const [connected, setConnected]     = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [deviceCount, setDeviceCount] = useState(0);
+  const [deviceStatus, setDeviceStatus] = useState({ status: null, lastPing: null, version: null });
   const prevSensorRef = useRef({
     invertor_side:       { motion: false },
     front_side:          { motion: false },
@@ -59,6 +70,22 @@ export default function Home() {
     const tokensRef = ref(database, "safe360/tokens");
     const unsub = onValue(tokensRef, (snap) => {
       setDeviceCount(snap.exists() ? Object.keys(snap.val()).length : 0);
+    });
+    return () => unsub();
+  }, []);
+
+  // ── Listen to ESP32 unit status ───────────────────────────────────────────
+  useEffect(() => {
+    if (!configured) return;
+    const unitRef = ref(database, "safe360/unit");
+    const unsub = onValue(unitRef, (snap) => {
+      if (!snap.exists()) return;
+      const d = snap.val();
+      setDeviceStatus({
+        status:   d.status   || null,
+        lastPing: d.lastPing || null,
+        version:  d.version  || null,
+      });
     });
     return () => unsub();
   }, []);
@@ -197,6 +224,16 @@ export default function Home() {
 
   const activeCount = Object.values(sensorData).filter((s) => s.motion).length;
 
+  const deviceOnline = (() => {
+    if (deviceStatus.status === "updating")   return "updating";
+    if (deviceStatus.status === "ota_failed") return "error";
+    if (deviceStatus.lastPing) {
+      return (Date.now() - deviceStatus.lastPing) < 90000 ? "online" : "offline";
+    }
+    if (deviceStatus.status === "online") return "online";
+    return "unknown";
+  })();
+
   return (
     <div className={styles.page}>
       <div className={styles.bgMesh} aria-hidden />
@@ -244,6 +281,50 @@ export default function Home() {
             <span>{activeCount === 0 ? "No motion detected" : "Motion in progress"}</span>
           </div>
         </section>
+
+        {/* ── DEVICE STATUS ── */}
+        {configured && (
+          <section className={styles.deviceSection}>
+            <h3 className={styles.sectionTitle}>Device Status</h3>
+            <div className={styles.deviceCard}>
+              <div className={styles.deviceIconWrap}>📡</div>
+              <div className={styles.deviceInfo}>
+                <p className={styles.deviceLabel}>ESP32 Security Unit</p>
+                <div className={styles.deviceMeta}>
+                  <div className={`${styles.deviceDot} ${
+                    deviceOnline === "online"   ? styles.deviceDotOnline   :
+                    deviceOnline === "updating" ? styles.deviceDotUpdating :
+                    deviceOnline === "offline"  ? styles.deviceDotOffline  :
+                    deviceOnline === "error"    ? styles.deviceDotOffline  :
+                                                  styles.deviceDotUnknown
+                  }`} />
+                  <span className={`${styles.deviceStatusText} ${
+                    deviceOnline === "online"   ? styles.deviceStatusOnline   :
+                    deviceOnline === "updating" ? styles.deviceStatusUpdating :
+                    deviceOnline === "offline"  ? styles.deviceStatusOffline  :
+                    deviceOnline === "error"    ? styles.deviceStatusOffline  :
+                                                  styles.deviceStatusUnknown
+                  }`}>
+                    {deviceOnline === "online"   ? "Online"        :
+                     deviceOnline === "updating" ? "Updating..."   :
+                     deviceOnline === "offline"  ? "Offline"       :
+                     deviceOnline === "error"    ? "Update Failed" :
+                                                   "Waiting..."}
+                  </span>
+                  {deviceStatus.lastPing && (
+                    <>
+                      <span className={styles.deviceSep}>·</span>
+                      <span className={styles.deviceMetaItem}>Last seen {timeAgo(deviceStatus.lastPing)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              {deviceStatus.version && (
+                <span className={styles.deviceVersionBadge}>v{deviceStatus.version}</span>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ── SENSOR CARDS ── */}
         <section className={styles.sensorsSection}>

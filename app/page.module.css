@@ -226,6 +226,86 @@
   border-bottom: 2px solid var(--border);
 }
 
+/* ── DEVICE STATUS ── */
+.deviceSection { animation: fadeInUp 0.45s ease both; }
+
+.deviceCard {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.deviceIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius);
+  background: var(--accent-lt);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.deviceInfo { flex: 1; min-width: 0; }
+
+.deviceLabel {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.deviceMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deviceDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.deviceDotOnline   { background: var(--safe);       animation: blink 2.5s infinite; }
+.deviceDotOffline  { background: var(--alert); }
+.deviceDotUpdating { background: var(--warn);        animation: blink 1s infinite; }
+.deviceDotUnknown  { background: var(--border-mid); }
+
+.deviceStatusText { font-size: 13px; font-weight: 600; }
+.deviceStatusOnline   { color: var(--safe); }
+.deviceStatusOffline  { color: var(--alert); }
+.deviceStatusUpdating { color: var(--warn); }
+.deviceStatusUnknown  { color: var(--text-muted); }
+
+.deviceSep { font-size: 12px; color: var(--border-mid); }
+
+.deviceMetaItem {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.deviceVersionBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-lt);
+  border: 1px solid #bfdbfe;
+  border-radius: 99px;
+  padding: 4px 12px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── SENSOR GRID ── */
 .sensorGrid {
   display: grid;
