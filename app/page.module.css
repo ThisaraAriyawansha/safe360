@@ -691,7 +691,9 @@
   background: var(--bg-card);
   border: 1.5px solid var(--border);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.15s;
+  cursor: pointer;
+  user-select: none;
 }
 
 .historyItem:hover { border-color: var(--border-mid); box-shadow: var(--shadow); }
@@ -755,6 +757,142 @@
 .historyBadge_alert { background: var(--alert-bg); color: var(--alert); border: 1px solid var(--alert-border); }
 .historyBadge_info  { background: var(--accent-lt); color: var(--accent); border: 1px solid #bfdbfe; }
 .historyBadge_warn  { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-border); }
+
+/* ── HISTORY CONTROLS (filter + select + delete) ── */
+.historyControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.historyFilters {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.historyFilterBtn {
+  padding: 5px 14px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.historyFilterBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.historyFilterBtnActive {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: #fff;
+}
+
+.historyFilterBtnActive:hover {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+  color: #fff;
+}
+
+.historyActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.selectAllLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.historyCheckbox {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--navy-800);
+  flex-shrink: 0;
+}
+
+.historyItemSelected {
+  background: var(--accent-lt) !important;
+  border-color: #bfdbfe !important;
+}
+
+.deleteBtn {
+  padding: 5px 16px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1.5px solid var(--alert-border);
+  color: var(--alert);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.deleteBtn:hover { background: var(--alert-bg); }
+
+.deleteConfirmRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deleteConfirmText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--alert);
+}
+
+.deleteConfirmBtn {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--alert);
+  border: none;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.deleteConfirmBtn:hover { opacity: 0.85; }
+
+.deleteCancelBtn {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1.5px solid var(--border-mid);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.deleteCancelBtn:hover { background: var(--bg); }
 
 /* ── FOOTER ── */
 .footer {

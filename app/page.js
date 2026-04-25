@@ -46,6 +46,9 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState("");
   const [deviceCount, setDeviceCount] = useState(0);
   const [deviceStatus, setDeviceStatus] = useState({ status: null, lastPing: null, version: null });
+  const [selectedKeys, setSelectedKeys]   = useState(new Set());
+  const [historyFilter, setHistoryFilter] = useState("all");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const prevSensorRef = useRef({
     invertor_side:       { motion: false },
     front_side:          { motion: false },
@@ -221,6 +224,41 @@ export default function Home() {
       saveAndToast("Could not write to Firebase. Check your config.", "warn");
     }
   };
+
+  // ── Alert history selection & deletion ────────────────────────────────────
+  const filteredHistory = historyFilter === "today"
+    ? history.filter(h => new Date(h.timestamp).toDateString() === new Date().toDateString())
+    : historyFilter === "week"
+    ? history.filter(h => h.timestamp > Date.now() - 7 * 24 * 60 * 60 * 1000)
+    : history;
+
+  const allSelected = filteredHistory.length > 0 && selectedKeys.size === filteredHistory.length;
+
+  const toggleSelect = useCallback((key) => {
+    setSelectedKeys(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+    setDeleteConfirm(false);
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedKeys(prev =>
+      prev.size === filteredHistory.length
+        ? new Set()
+        : new Set(filteredHistory.map(i => i.key))
+    );
+    setDeleteConfirm(false);
+  }, [filteredHistory]);
+
+  const deleteSelected = useCallback(async () => {
+    await Promise.all(
+      [...selectedKeys].map(key => remove(ref(database, `safe360/alerts/${key}`)))
+    );
+    setSelectedKeys(new Set());
+    setDeleteConfirm(false);
+  }, [selectedKeys]);
 
   const activeCount = Object.values(sensorData).filter((s) => s.motion).length;
 
@@ -415,18 +453,76 @@ export default function Home() {
             <span className={styles.historyBadge}>{history.length} events · last 30 days</span>
           </div>
 
-          {history.length === 0 ? (
+          {history.length > 0 && (
+            <div className={styles.historyControls}>
+              <div className={styles.historyFilters}>
+                {[
+                  { id: "all",   label: "All" },
+                  { id: "today", label: "Today" },
+                  { id: "week",  label: "Last 7 days" },
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    className={`${styles.historyFilterBtn} ${historyFilter === f.id ? styles.historyFilterBtnActive : ""}`}
+                    onClick={() => { setHistoryFilter(f.id); setSelectedKeys(new Set()); setDeleteConfirm(false); }}
+                  >{f.label}</button>
+                ))}
+              </div>
+              {filteredHistory.length > 0 && (
+                <div className={styles.historyActions}>
+                  <label className={styles.selectAllLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.historyCheckbox}
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                    />
+                    Select all
+                  </label>
+                  {selectedKeys.size > 0 && (
+                    deleteConfirm ? (
+                      <div className={styles.deleteConfirmRow}>
+                        <span className={styles.deleteConfirmText}>
+                          Delete {selectedKeys.size} alert{selectedKeys.size !== 1 ? "s" : ""}?
+                        </span>
+                        <button className={styles.deleteConfirmBtn} onClick={deleteSelected}>Yes, delete</button>
+                        <button className={styles.deleteCancelBtn} onClick={() => setDeleteConfirm(false)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button className={styles.deleteBtn} onClick={() => setDeleteConfirm(true)}>
+                        Delete {selectedKeys.size} selected
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {filteredHistory.length === 0 ? (
             <div className={styles.historyEmpty}>
-              <span className={styles.historyEmptyIcon}>📋</span>
-              <p>No alerts recorded yet</p>
+              <span className={styles.historyEmptyIcon}>{history.length === 0 ? "📋" : "🔍"}</span>
+              <p>{history.length === 0 ? "No alerts recorded yet" : "No alerts in this time period"}</p>
             </div>
           ) : (
             <div className={styles.historyList}>
-              {history.map((item) => {
+              {filteredHistory.map((item) => {
                 const sensor = SENSORS.find((s) => s.id === item.sensorId);
+                const isSelected = selectedKeys.has(item.key);
                 return (
-                  <div key={item.key} className={`${styles.historyItem} ${styles[`historyItem_${item.type}`]}`}>
+                  <div
+                    key={item.key}
+                    className={`${styles.historyItem} ${styles[`historyItem_${item.type}`]} ${isSelected ? styles.historyItemSelected : ""}`}
+                    onClick={() => toggleSelect(item.key)}
+                  >
                     <div className={styles.historyItemLeft}>
+                      <input
+                        type="checkbox"
+                        className={styles.historyCheckbox}
+                        checked={isSelected}
+                        onChange={() => toggleSelect(item.key)}
+                        onClick={e => e.stopPropagation()}
+                      />
                       <span className={styles.historyDot} />
                       <span className={styles.historyIcon}>{sensor?.icon || "🔔"}</span>
                     </div>
