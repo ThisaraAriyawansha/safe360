@@ -49,11 +49,13 @@ export default function Home() {
   const [selectedKeys, setSelectedKeys]   = useState(new Set());
   const [historyFilter, setHistoryFilter] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const prevSensorRef = useRef({
+  const prevSensorRef  = useRef({
     invertor_side:       { motion: false },
     front_side:          { motion: false },
     water_supply_side:   { motion: false },
   });
+  // Tracks last alert time per sensor to suppress duplicates within 10 s
+  const lastAlertRef = useRef({});
 
   // ── Clock ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -151,7 +153,11 @@ export default function Home() {
 
         setSensorData({ ...prevSensorRef.current });
 
+        const now = Date.now();
         newMotionKeys.forEach((key) => {
+          const lastAt = lastAlertRef.current[key] || 0;
+          if (now - lastAt < 10000) return; // suppress duplicates within 10 s
+          lastAlertRef.current[key] = now;
           const sensor = SENSORS.find((s) => s.id === key);
           saveAndToast(`Motion detected at ${sensor?.label || key}!`, "alert", key);
         });
@@ -217,6 +223,8 @@ export default function Home() {
 
   // ── Simulate motion (testing only) ────────────────────────────────────────
   const simulateMotion = async (sensorId) => {
+    const lastAt = lastAlertRef.current[sensorId] || 0;
+    if (Date.now() - lastAt < 10000) return; // block rapid re-triggers
     try {
       await set(ref(database, `safe360/sensors/${sensorId}`), { motion: true, lastSeen: Date.now() });
       setTimeout(() => set(ref(database, `safe360/sensors/${sensorId}/motion`), false), 4000);
