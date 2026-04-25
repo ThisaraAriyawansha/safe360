@@ -228,6 +228,12 @@ export default function Home() {
     try {
       await set(ref(database, `safe360/sensors/${sensorId}`), { motion: true, lastSeen: Date.now() });
       setTimeout(() => set(ref(database, `safe360/sensors/${sensorId}/motion`), false), 4000);
+      // Also fire a real push so background / closed devices get notified
+      fetch("/api/notify-sim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sensor: sensorId }),
+      }).catch(() => {}); // fire-and-forget
     } catch {
       saveAndToast("Could not write to Firebase. Check your config.", "warn");
     }

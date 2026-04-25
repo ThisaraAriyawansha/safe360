@@ -6,11 +6,7 @@ export async function POST(request) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { sensor, secret } = body;
-
-  if (!secret || secret !== process.env.NOTIFY_SECRET)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  const { sensor } = body;
   if (!sensor)
     return NextResponse.json({ error: "Missing sensor" }, { status: 400 });
 
@@ -18,7 +14,7 @@ export async function POST(request) {
     const result = await sendPush(sensor);
     return NextResponse.json(result);
   } catch (err) {
-    console.error("[notify] error:", err);
+    console.error("[notify-sim] error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
