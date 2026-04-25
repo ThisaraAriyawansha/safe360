@@ -186,6 +186,32 @@ export default function Home() {
     setTimeout(() => setAlerts((prev) => prev.filter((a) => a.id !== toastId)), 8000);
   }, []);
 
+  // ── Restore notification state from localStorage on mount ────────────────
+  useEffect(() => {
+    const stored = localStorage.getItem("safe360_fcm_token");
+    if (stored) {
+      setFcmToken(stored);
+      setNotifStatus("granted");
+    }
+  }, []);
+
+  // ── Register foreground message handler whenever notifications are active ──
+  useEffect(() => {
+    if (notifStatus !== "granted") return;
+    let unsub;
+    getFirebaseMessaging().then((messaging) => {
+      if (!messaging) return;
+      unsub = onMessage(messaging, (payload) => {
+        const { title, body } = payload.notification || {};
+        saveAndToast(body || title || "Motion detected!", "alert");
+        if (Notification.permission === "granted") {
+          new Notification(title || "Safe360 Alert", { body: body || "Motion detected!", icon: "/icon-192.png" });
+        }
+      });
+    });
+    return () => unsub?.();
+  }, [notifStatus, saveAndToast]);
+
   // ── FCM / push notifications ───────────────────────────────────────────────
   const requestNotifications = async () => {
     setNotifStatus("requesting");
@@ -196,30 +222,38 @@ export default function Home() {
       if (!messaging)               { setNotifStatus("denied"); return; }
       const token = await getToken(messaging, { vapidKey: firebaseConfig.vapidKey });
       setFcmToken(token);
+      localStorage.setItem("safe360_fcm_token", token);
       setNotifStatus("granted");
 
-      // Save token to Firebase so all devices can be notified
       const deviceLabel = `${navigator.platform || "Device"} — ${new Date().toLocaleDateString()}`;
-      const tokenKey    = token.slice(-16); // use last 16 chars as a stable key
+      const tokenKey    = token.slice(-16);
       await set(ref(database, `safe360/tokens/${tokenKey}`), {
         token,
-        label:      deviceLabel,
-        userAgent:  navigator.userAgent.slice(0, 80),
+        label:        deviceLabel,
+        userAgent:    navigator.userAgent.slice(0, 80),
         registeredAt: Date.now(),
       }).catch(() => {});
-
-      onMessage(messaging, (payload) => {
-        const { title, body } = payload.notification || {};
-        saveAndToast(body || title || "Motion detected!", "alert");
-        if (Notification.permission === "granted") {
-          new Notification(title || "Safe360 Alert", { body: body || "Motion detected!", icon: "/icon-192.png" });
-        }
-      });
     } catch (err) {
       console.error(err);
       setNotifStatus("denied");
     }
   };
+
+  // ── Disable notifications ─────────────────────────────────────────────────
+  const disableNotifications = useCallback(async () => {
+    if (!fcmToken) return;
+    setNotifStatus("disabling");
+    try {
+      const tokenKey = fcmToken.slice(-16);
+      await remove(ref(database, `safe360/tokens/${tokenKey}`));
+      localStorage.removeItem("safe360_fcm_token");
+      setFcmToken(null);
+      setNotifStatus("disabled");
+    } catch (err) {
+      console.error(err);
+      setNotifStatus("granted"); // revert on error
+    }
+  }, [fcmToken]);
 
   // ── Simulate motion (testing only) ────────────────────────────────────────
   const simulateMotion = async (sensorId) => {
@@ -432,10 +466,26 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            {notifStatus === "idle"       && <button className={styles.notifBtn} onClick={requestNotifications}>Enable Notifications</button>}
+            {(notifStatus === "idle" || notifStatus === "disabled") && (
+              <button className={styles.notifBtn} onClick={requestNotifications}>
+                {notifStatus === "disabled" ? "Re-enable Notifications" : "Enable Notifications"}
+              </button>
+            )}
             {notifStatus === "requesting" && <button className={styles.notifBtn} disabled>Requesting…</button>}
-            {notifStatus === "granted"    && <div className={styles.notifGranted}><span className={styles.notifGrantedDot} /> Notifications Active</div>}
-            {notifStatus === "denied"     && <p className={styles.notifDenied}>Permission denied. Enable notifications in your browser settings.</p>}
+            {notifStatus === "disabling"  && <button className={styles.notifBtn} disabled>Disabling…</button>}
+            {notifStatus === "granted" && (
+              <div className={styles.notifGrantedRow}>
+                <div className={styles.notifGranted}>
+                  <span className={styles.notifGrantedDot} /> Notifications Active
+                </div>
+                <button className={styles.disableBtn} onClick={disableNotifications}>
+                  Disable
+                </button>
+              </div>
+            )}
+            {notifStatus === "denied" && (
+              <p className={styles.notifDenied}>Permission denied. Enable notifications in your browser settings.</p>
+            )}
             {fcmToken && (
               <div className={styles.tokenBox}>
                 <p className={styles.tokenLabel}>FCM Device Token (save this for ESP32):</p>
