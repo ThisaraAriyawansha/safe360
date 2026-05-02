@@ -920,6 +920,111 @@
 
 .deleteCancelBtn:hover { background: var(--bg); }
 
+/* ── HERO DISABLED STATE ── */
+.heroStatusDisabled {
+  background: rgba(100,116,139,0.15);
+  border: 1px solid rgba(100,116,139,0.40);
+  color: #94a3b8;
+}
+
+/* ── DEVICE STATUS — DISABLED ── */
+.deviceDotDisabled    { background: #94a3b8; }
+.deviceStatusDisabled { color: #94a3b8; }
+
+/* ── SECURITY CONTROLS ── */
+.controlsSection { animation: fadeInUp 0.45s ease both; }
+
+.controlsCard {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+}
+
+.controlLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.controlIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius);
+  background: var(--accent-lt);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.controlInfo { flex: 1; min-width: 0; }
+
+.controlLabel {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.controlDesc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.controlDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 22px;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border-radius: 99px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggleOn  { background: var(--safe); }
+.toggleOff { background: var(--border-mid); }
+
+.toggleThumb {
+  position: absolute;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.toggleOn  .toggleThumb { left: calc(100% - 24px); }
+.toggleOff .toggleThumb { left: 4px; }
+
+@media (max-width: 480px) {
+  .controlRow { padding: 14px 16px; gap: 12px; }
+  .controlDivider { margin: 0 16px; }
+}
+
 /* ── FOOTER ── */
 .footer {
   text-align: center;

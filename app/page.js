@@ -49,6 +49,8 @@ export default function Home() {
   const [selectedKeys, setSelectedKeys]   = useState(new Set());
   const [historyFilter, setHistoryFilter] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [silentMode,    setSilentMode]    = useState(false);
+  const [systemActive,  setSystemActive]  = useState(true);
   const prevSensorRef  = useRef({
     invertor_side:       { motion: false },
     front_side:          { motion: false },
@@ -75,6 +77,19 @@ export default function Home() {
     const tokensRef = ref(database, "safe360/tokens");
     const unsub = onValue(tokensRef, (snap) => {
       setDeviceCount(snap.exists() ? Object.keys(snap.val()).length : 0);
+    });
+    return () => unsub();
+  }, []);
+
+  // ── Listen to remote settings (silentMode / systemActive) ────────────────
+  useEffect(() => {
+    if (!configured) return;
+    const settingsRef = ref(database, "safe360/settings");
+    const unsub = onValue(settingsRef, (snap) => {
+      if (!snap.exists()) return;
+      const s = snap.val();
+      if (typeof s.silentMode   === "boolean") setSilentMode(s.silentMode);
+      if (typeof s.systemActive === "boolean") setSystemActive(s.systemActive);
     });
     return () => unsub();
   }, []);
@@ -255,6 +270,21 @@ export default function Home() {
     }
   }, [fcmToken]);
 
+  // ── Security control toggles ─────────────────────────────────────────────
+  const toggleSystemActive = async () => {
+    const next = !systemActive;
+    setSystemActive(next);
+    await set(ref(database, "safe360/settings/systemActive"), next)
+      .catch(() => setSystemActive(!next));
+  };
+
+  const toggleSilentMode = async () => {
+    const next = !silentMode;
+    setSilentMode(next);
+    await set(ref(database, "safe360/settings/silentMode"), next)
+      .catch(() => setSilentMode(!next));
+  };
+
   // ── Simulate motion (testing only) ────────────────────────────────────────
   const simulateMotion = async (sensorId) => {
     const lastAt = lastAlertRef.current[sensorId] || 0;
@@ -311,6 +341,7 @@ export default function Home() {
   const activeCount = Object.values(sensorData).filter((s) => s.motion).length;
 
   const deviceOnline = (() => {
+    if (deviceStatus.status === "disabled")   return "disabled";
     if (deviceStatus.status === "updating")   return "updating";
     if (deviceStatus.status === "ota_failed") return "error";
     if (deviceStatus.lastPing) {
@@ -359,12 +390,12 @@ export default function Home() {
         <section className={styles.heroSection}>
           <p className={styles.heroSub}>Home Security Monitor</p>
           <h2 className={styles.heroTitle}>
-            {activeCount === 0 ? "All Clear" : `${activeCount} Alert${activeCount > 1 ? "s" : ""} Active`}
+            {!systemActive ? "System Disabled" : activeCount === 0 ? "All Clear" : `${activeCount} Alert${activeCount > 1 ? "s" : ""} Active`}
           </h2>
-          <div className={`${styles.heroStatus} ${activeCount > 0 ? styles.heroStatusAlert : styles.heroStatusSafe}`}>
+          <div className={`${styles.heroStatus} ${!systemActive ? styles.heroStatusDisabled : activeCount > 0 ? styles.heroStatusAlert : styles.heroStatusSafe}`}>
             <div className={styles.pulseRing} />
             <span className={styles.heroStatusDot} />
-            <span>{activeCount === 0 ? "No motion detected" : "Motion in progress"}</span>
+            <span>{!systemActive ? "Security monitoring paused" : activeCount === 0 ? "No motion detected" : "Motion in progress"}</span>
           </div>
         </section>
 
@@ -378,24 +409,27 @@ export default function Home() {
                 <p className={styles.deviceLabel}>ESP32 Security Unit</p>
                 <div className={styles.deviceMeta}>
                   <div className={`${styles.deviceDot} ${
-                    deviceOnline === "online"   ? styles.deviceDotOnline   :
-                    deviceOnline === "updating" ? styles.deviceDotUpdating :
-                    deviceOnline === "offline"  ? styles.deviceDotOffline  :
-                    deviceOnline === "error"    ? styles.deviceDotOffline  :
-                                                  styles.deviceDotUnknown
+                    deviceOnline === "online"    ? styles.deviceDotOnline   :
+                    deviceOnline === "disabled"  ? styles.deviceDotDisabled :
+                    deviceOnline === "updating"  ? styles.deviceDotUpdating :
+                    deviceOnline === "offline"   ? styles.deviceDotOffline  :
+                    deviceOnline === "error"     ? styles.deviceDotOffline  :
+                                                   styles.deviceDotUnknown
                   }`} />
                   <span className={`${styles.deviceStatusText} ${
-                    deviceOnline === "online"   ? styles.deviceStatusOnline   :
-                    deviceOnline === "updating" ? styles.deviceStatusUpdating :
-                    deviceOnline === "offline"  ? styles.deviceStatusOffline  :
-                    deviceOnline === "error"    ? styles.deviceStatusOffline  :
-                                                  styles.deviceStatusUnknown
+                    deviceOnline === "online"    ? styles.deviceStatusOnline    :
+                    deviceOnline === "disabled"  ? styles.deviceStatusDisabled  :
+                    deviceOnline === "updating"  ? styles.deviceStatusUpdating  :
+                    deviceOnline === "offline"   ? styles.deviceStatusOffline   :
+                    deviceOnline === "error"     ? styles.deviceStatusOffline   :
+                                                   styles.deviceStatusUnknown
                   }`}>
-                    {deviceOnline === "online"   ? "Online"        :
-                     deviceOnline === "updating" ? "Updating..."   :
-                     deviceOnline === "offline"  ? "Offline"       :
-                     deviceOnline === "error"    ? "Update Failed" :
-                                                   "Waiting..."}
+                    {deviceOnline === "online"    ? "Online"        :
+                     deviceOnline === "disabled"  ? "Disabled"      :
+                     deviceOnline === "updating"  ? "Updating..."   :
+                     deviceOnline === "offline"   ? "Offline"       :
+                     deviceOnline === "error"     ? "Update Failed" :
+                                                    "Waiting..."}
                   </span>
                   {deviceStatus.lastPing && (
                     <>
@@ -408,6 +442,56 @@ export default function Home() {
               {deviceStatus.version && (
                 <span className={styles.deviceVersionBadge}>v{deviceStatus.version}</span>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* ── SECURITY CONTROLS ── */}
+        {configured && (
+          <section className={styles.controlsSection}>
+            <h3 className={styles.sectionTitle}>Security Controls</h3>
+            <div className={styles.controlsCard}>
+
+              <div className={styles.controlRow}>
+                <div className={styles.controlLeft}>
+                  <div className={styles.controlIconWrap}>🛡️</div>
+                  <div className={styles.controlInfo}>
+                    <p className={styles.controlLabel}>Security System</p>
+                    <p className={styles.controlDesc}>
+                      {systemActive ? "Active — monitoring all zones" : "Disabled — no monitoring or alerts"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.toggle} ${systemActive ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={toggleSystemActive}
+                  aria-label={systemActive ? "Turn off security system" : "Turn on security system"}
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+              </div>
+
+              <div className={styles.controlDivider} />
+
+              <div className={styles.controlRow}>
+                <div className={styles.controlLeft}>
+                  <div className={styles.controlIconWrap}>🔕</div>
+                  <div className={styles.controlInfo}>
+                    <p className={styles.controlLabel}>Silent Mode</p>
+                    <p className={styles.controlDesc}>
+                      {silentMode ? "Buzzer disabled — alerts still sent" : "Buzzer active on motion"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.toggle} ${silentMode ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={toggleSilentMode}
+                  aria-label={silentMode ? "Disable silent mode" : "Enable silent mode"}
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+              </div>
+
             </div>
           </section>
         )}
